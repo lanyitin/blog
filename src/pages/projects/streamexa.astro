@@ -1,0 +1,254 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+const description =
+	'Streamexa — a Go system that detects, analyzes, and downloads video streams from web pages, with a gRPC-based plugin architecture and distributed workers.';
+
+const stack = [
+	'Go 1.25',
+	'go-rod (CDP)',
+	'HashiCorp go-plugin',
+	'gRPC / Protobuf',
+	'chi',
+	'GORM (SQLite / PostgreSQL)',
+	'bubbletea / lipgloss',
+	'Vue 3 + TypeScript',
+	'Vite',
+	'Docker / Packer',
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title="Streamexa" description={description} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="lang-switch" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="zh" class="active">中文</button>
+				<button type="button" data-lang-btn="en">EN</button>
+			</div>
+
+			<!-- 中文 -->
+			<section data-lang="zh" lang="zh-Hant">
+				<h1>Streamexa</h1>
+				<p class="tagline">
+					一套以 Go 打造的系統,能偵測、分析並下載網頁中的影音串流 (HLS / DASH)。
+				</p>
+
+				<h2>專案簡介</h2>
+				<p>
+					許多網站以 JavaScript 動態載入、播放器混淆等方式遞送影音,使得串流不易被直接取得。Streamexa
+					透過自動化瀏覽器分析網頁,辨識其中的影音串流與中繼資料,並以分散式的方式管理下載工作。
+				</p>
+				<p>
+					這個專案我最感興趣的部分在於它的工程架構:如何用單一 binary 涵蓋伺服器、worker
+					與 CLI 三種角色,如何把瀏覽器分析做進 Go 程序內,以及如何設計一套安全、可隔離的外掛系統。
+				</p>
+
+				<h2>架構亮點</h2>
+				<ul>
+					<li>
+						<strong>單一 binary,三種模式</strong> — 同一支 <code>streamexa</code> 可切換為
+						<code>server</code>(Web UI + REST API + gRPC 派工)、<code>worker</code>(連線伺服器執行分析與下載)、<code>cli</code>(終端機一次性下載器)。
+					</li>
+					<li>
+						<strong>In-process CDP 分析器</strong> — 以 go-rod 透過 Chrome DevTools Protocol
+						驅動 Chromium,分析與分類邏輯(廣告偵測、m3u8 解析、直播判定)以原生 Go 編譯進 binary,不需另外的子程序或 JavaScript 分析器。
+					</li>
+					<li>
+						<strong>分散式下載 worker</strong> — 多個 worker 可透過 gRPC 連上伺服器並行處理任務,搭配 per-domain 節流與斷路器。
+					</li>
+					<li>
+						<strong>Vue 3 Web UI</strong> — 以 WebSocket 即時更新任務進度、ETA 與狀態,支援亮/暗主題。
+					</li>
+					<li>
+						<strong>瀏覽器擴充套件</strong> — 一鍵把目前頁面加入下載佇列 (Chrome / Firefox, Manifest V3)。
+					</li>
+				</ul>
+
+				<h2>外掛系統</h2>
+				<p>
+					第三方可以撰寫 Go 外掛來處理特定網站的擷取流程。外掛系統以 HashiCorp 的
+					<code>go-plugin</code>(gRPC)為基礎,並提供對外的 plugin SDK:
+				</p>
+				<ul>
+					<li>依外掛目錄中的 <code>streamexa-plugin.json</code> 自動探索與 URL 比對。</li>
+					<li>
+						白名單式的 action API(<code>Click</code>、<code>WaitForSelector</code>、<code>PlayVideos</code>、<code>Snapshot</code>、<code>GetResponseBody</code>、<code>Fetch</code>…),外掛無法取得原生 CDP,快照中的認證資訊也會被遮蔽。
+					</li>
+					<li>每個外掛在獨立的程序與瀏覽器工作階段中執行,單一外掛崩潰或逾時不影響其他外掛。</li>
+				</ul>
+
+				<h2>技術棧</h2>
+				<div class="tags">
+					{stack.map((item) => <span class="tag">{item}</span>)}
+				</div>
+
+				<h2>開發狀態</h2>
+				<p>主動開發中(v0.1.x 系列),核心分析、外掛系統與分散式下載皆已可運作。</p>
+
+				<h2>連結</h2>
+				<p class="placeholder">（原始碼 / Demo 連結待補）</p>
+			</section>
+
+			<!-- English -->
+			<section data-lang="en" lang="en" hidden>
+				<h1>Streamexa</h1>
+				<p class="tagline">
+					A Go system that detects, analyzes, and downloads video streams (HLS / DASH) from web pages.
+				</p>
+
+				<h2>Overview</h2>
+				<p>
+					Many sites deliver video through JavaScript-heavy loading and obfuscated players, which
+					makes the underlying streams hard to obtain directly. Streamexa drives a real browser to
+					analyze a page, identifies its video streams and metadata, and manages downloads through a
+					distributed set of workers.
+				</p>
+				<p>
+					The part I find most interesting is the engineering: fitting the server, worker, and CLI
+					roles into a single binary, moving browser analysis in-process, and designing a plugin
+					system that stays safe and well isolated.
+				</p>
+
+				<h2>Architecture</h2>
+				<ul>
+					<li>
+						<strong>Single binary, three modes</strong> — one <code>streamexa</code> binary switches
+						between <code>server</code> (web UI + REST API + gRPC dispatch), <code>worker</code>
+						(connects to the server to analyze and download), and <code>cli</code> (a one-shot
+						terminal downloader).
+					</li>
+					<li>
+						<strong>In-process CDP analyzer</strong> — go-rod drives Chromium over the Chrome
+						DevTools Protocol; analysis and classification (ad detection, m3u8 parsing, live-stream
+						detection) are native Go compiled into the binary — no separate subprocess or JavaScript
+						analyzer.
+					</li>
+					<li>
+						<strong>Distributed download workers</strong> — multiple workers connect over gRPC and
+						process tasks concurrently, with per-domain throttling and a circuit breaker.
+					</li>
+					<li>
+						<strong>Vue 3 web UI</strong> — real-time task progress, ETA, and status over WebSocket,
+						with light/dark themes.
+					</li>
+					<li>
+						<strong>Browser extension</strong> — one click to add the current page to the download
+						queue (Chrome / Firefox, Manifest V3).
+					</li>
+				</ul>
+
+				<h2>Plugin System</h2>
+				<p>
+					Third parties can write Go plugins to handle site-specific extraction. The plugin system is
+					built on HashiCorp's <code>go-plugin</code> (gRPC) and ships a public plugin SDK:
+				</p>
+				<ul>
+					<li>Automatic discovery and URL matching via a <code>streamexa-plugin.json</code> manifest.</li>
+					<li>
+						A whitelisted action API (<code>Click</code>, <code>WaitForSelector</code>,
+						<code>PlayVideos</code>, <code>Snapshot</code>, <code>GetResponseBody</code>,
+						<code>Fetch</code>…) — plugins get no raw CDP access, and credentials are redacted from
+						snapshots.
+					</li>
+					<li>
+						Each plugin runs in its own process and browser session; a crash or timeout in one
+						plugin doesn't affect the others.
+					</li>
+				</ul>
+
+				<h2>Tech Stack</h2>
+				<div class="tags">
+					{stack.map((item) => <span class="tag">{item}</span>)}
+				</div>
+
+				<h2>Status</h2>
+				<p>
+					Under active development (the v0.1.x series); core analysis, the plugin system, and
+					distributed downloads all work today.
+				</p>
+
+				<h2>Links</h2>
+				<p class="placeholder">(Source / demo links to come.)</p>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.lang-switch {
+		display: flex;
+		gap: 0.25rem;
+		justify-content: flex-end;
+		margin-bottom: 1rem;
+	}
+	.lang-switch button {
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.75rem;
+		border: 1px solid rgb(var(--gray-light));
+		background: white;
+		color: rgb(var(--gray));
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease,
+			border-color 0.2s ease;
+	}
+	.lang-switch button.active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
+	}
+	.tagline {
+		font-size: 1.15rem;
+		color: rgb(var(--gray-dark));
+		line-height: 1.6;
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin: 0.5rem 0 1rem;
+	}
+	.tag {
+		font-size: 0.8rem;
+		padding: 0.2rem 0.6rem;
+		border-radius: 999px;
+		background: rgb(var(--gray-light));
+		color: rgb(var(--gray-dark));
+	}
+	.placeholder {
+		color: rgb(var(--gray));
+		font-style: italic;
+	}
+</style>
+
+<script>
+	const buttons = document.querySelectorAll<HTMLButtonElement>('[data-lang-btn]');
+	const sections = document.querySelectorAll<HTMLElement>('[data-lang]');
+
+	function setLang(lang: string) {
+		sections.forEach((section) => {
+			section.hidden = section.dataset.lang !== lang;
+		});
+		buttons.forEach((button) => {
+			button.classList.toggle('active', button.dataset.langBtn === lang);
+		});
+	}
+
+	buttons.forEach((button) => {
+		button.addEventListener('click', () => setLang(button.dataset.langBtn!));
+	});
+
+	// Default to Chinese; English section starts hidden via markup.
+	setLang('zh');
+</script>
