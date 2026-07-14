@@ -2,49 +2,121 @@
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+const description =
+	'Lawrence Lan — a software engineer who likes building systems and thinking about architecture. Working across Go, distributed systems, browser automation, and full-stack development.';
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<BaseHead title="Lawrence Lan" description={description} />
 	</head>
 	<body>
 		<Header />
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to <a href="https://docs.astro.build/"
-					>read the docs
-				</a> or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out <a
-					href="https://github.com/Charca/astro-blog-template"
-					>astro-blog-template
-				</a> by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+			<div class="lang-switch" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="zh" class="active">中文</button>
+				<button type="button" data-lang-btn="en">EN</button>
+			</div>
+
+			<!-- 中文 -->
+			<section data-lang="zh" lang="zh-Hant">
+				<h1>嗨,我是 Lawrence 👋</h1>
+				<p class="lede">
+					一個喜歡打造系統、鑽研架構的軟體工程師。
+				</p>
+				<p>
+					我平常在 Go、分散式系統、瀏覽器自動化與全端開發之間打轉,最享受的事情是把一個複雜、模糊的問題,拆解成乾淨、能長久維護的架構。比起把功能做出來,我更在意「為什麼這樣設計」以及它在真實環境中會如何運作。
+				</p>
+				<p>
+					目前我主要在開發 <a href="/projects/streamexa">Streamexa</a> —
+					一套以 Go 打造、能偵測與下載網頁影音串流的系統,核心是單一 binary 三種模式與 gRPC 外掛架構。你可以在 <a href="/projects">Projects</a> 看到我做過的東西,在 <a href="/blog">Blog</a> 讀到我的一些筆記與想法。
+				</p>
+				<p>
+					想聊聊的話,歡迎寄信到
+					<a href="mailto:lanyitin@gmail.com">lanyitin@gmail.com</a>。
+				</p>
+			</section>
+
+			<!-- English -->
+			<section data-lang="en" lang="en" hidden>
+				<h1>Hi, I'm Lawrence 👋</h1>
+				<p class="lede">
+					A software engineer who likes building systems and thinking about architecture.
+				</p>
+				<p>
+					I spend most of my time somewhere between Go, distributed systems, browser automation, and
+					full-stack development. What I enjoy most is taking a complex, fuzzy problem and breaking it
+					down into a clean architecture that holds up over time. More than shipping a feature, I care
+					about <em>why</em> it's designed a certain way and how it behaves in the real world.
+				</p>
+				<p>
+					These days I'm mainly building <a href="/projects/streamexa">Streamexa</a> — a Go system
+					that detects and downloads video streams from web pages, built around a single binary with
+					three modes and a gRPC plugin architecture. You can find what I've worked on under
+					<a href="/projects">Projects</a>, and some notes and ideas on the <a href="/blog">Blog</a>.
+				</p>
+				<p>
+					Want to chat? Drop me a line at
+					<a href="mailto:lanyitin@gmail.com">lanyitin@gmail.com</a>.
+				</p>
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.lang-switch {
+		display: flex;
+		gap: 0.25rem;
+		justify-content: flex-end;
+		margin-bottom: 1rem;
+	}
+	.lang-switch button {
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.75rem;
+		border: 1px solid rgb(var(--gray-light));
+		background: white;
+		color: rgb(var(--gray));
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease,
+			border-color 0.2s ease;
+	}
+	.lang-switch button.active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
+	}
+	.lede {
+		font-size: 1.25rem;
+		color: rgb(var(--gray-dark));
+		line-height: 1.6;
+	}
+</style>
+
+<script>
+	const buttons = document.querySelectorAll<HTMLButtonElement>('[data-lang-btn]');
+	const sections = document.querySelectorAll<HTMLElement>('[data-lang]');
+
+	function setLang(lang: string) {
+		sections.forEach((section) => {
+			section.hidden = section.dataset.lang !== lang;
+		});
+		buttons.forEach((button) => {
+			button.classList.toggle('active', button.dataset.langBtn === lang);
+		});
+	}
+
+	buttons.forEach((button) => {
+		button.addEventListener('click', () => setLang(button.dataset.langBtn!));
+	});
+
+	// Default to Chinese; English section starts hidden via markup.
+	setLang('zh');
+</script>
