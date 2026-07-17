@@ -2,6 +2,7 @@
 title: "來巴拉圭的第一個月:重新當一次新手"
 description: "從一句「¿Algo para tomar?」都聽不懂開始——記錄搬到巴拉圭後,語言、貨幣、食物與生活全部歸零的第一個月。"
 pubDate: "Jul 14 2026"
+heroImage: "/first-month-in-paraguay.jpeg"
 ---
 
 飛機還沒降落,西班牙文就先把我包圍了。
