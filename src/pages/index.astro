@@ -15,9 +15,18 @@ const description =
 	<body>
 		<Header />
 		<main>
-			<div class="lang-switch" role="group" aria-label="Language">
-				<button type="button" data-lang-btn="zh" class="active">中文</button>
-				<button type="button" data-lang-btn="en">EN</button>
+			<div class="intro-top">
+				<img
+					class="avatar"
+					src="/avatar.jpeg"
+					alt="Lawrence Lan"
+					width="460"
+					height="460"
+				/>
+				<div class="lang-switch" role="group" aria-label="Language">
+					<button type="button" data-lang-btn="zh" class="active">中文</button>
+					<button type="button" data-lang-btn="en">EN</button>
+				</div>
 			</div>
 
 			<!-- 中文 -->
@@ -68,11 +77,25 @@ const description =
 </html>
 
 <style>
+	.intro-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+	.avatar {
+		width: 120px;
+		height: 120px;
+		border-radius: 50%;
+		object-fit: cover;
+		display: block;
+		box-shadow: 0 2px 8px rgba(var(--gray), 25%);
+	}
 	.lang-switch {
 		display: flex;
 		gap: 0.25rem;
 		justify-content: flex-end;
-		margin-bottom: 1rem;
 	}
 	.lang-switch button {
 		font: inherit;
