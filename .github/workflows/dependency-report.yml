@@ -1,0 +1,40 @@
+name: Dependency report
+
+on:
+  schedule:
+    # Mondays 13:00 UTC (09:00 America/Asuncion)
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  outdated:
+    name: Report outdated packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bun install --frozen-lockfile
+      - name: Outdated packages and vulnerabilities
+        run: |
+          {
+            echo '## Outdated tools (mise.toml)'
+            echo
+            echo '```'
+            mise outdated || true
+            echo '```'
+            echo
+            echo '## Outdated packages'
+            echo
+            echo '```'
+            bun outdated || true
+            echo '```'
+            echo
+            echo '## Vulnerabilities'
+            echo
+            echo '```'
+            bun audit || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  # npm dependencies in package.json, resolved through bun.lock
+  - package-ecosystem: bun
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Asuncion
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    labels:
+      - dependencies
+    groups:
+      # Astro core and its integrations move together — upgrade them in one PR
+      astro:
+        patterns:
+          - astro
+          - "@astrojs/*"
+      # Everything else: bundle non-breaking bumps, leave majors as individual PRs
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Versions of the actions used in .github/workflows/
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Asuncion
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
+    groups:
+      actions:
+        patterns:
+          - "*"

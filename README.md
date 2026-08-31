@@ -1,64 +1,77 @@
-# Astro Starter Kit: Blog
+# lawlan.dev
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+Personal website and blog, built with [Astro](https://astro.build) (content collections + MDX) and
+hosted on **GitHub Pages** at [lawlan.dev](https://lawlan.dev).
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## Requirements
 
-<!-- dash-content-start -->
-
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
-
-Features:
-
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
+Tooling is pinned in `mise.toml` and managed with [mise](https://mise.jdx.dev):
 
 ```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+mise install     # installs Bun 1.4.0
+bun install
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+Bun is the only runtime needed — Node.js is not required, since `bun run` provides its own `node`
+shim for the Astro CLI.
 
-## 🚀 Project Structure
+## Commands
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+| Command | Action |
+| --- | --- |
+| `bun install` | Install dependencies |
+| `bun run dev` | Dev server at `localhost:4321` |
+| `bun run build` | Build the static site to `./dist/` |
+| `bun run preview` | Serve the built `./dist/` locally |
+| `bun run check` | `astro build && tsc` — run before pushing |
+| `bun run deps:check` | `bun outdated` — packages with newer versions |
+| `bun run deps:audit` | `bun audit` — known vulnerabilities |
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Project structure
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+- `src/pages/` — file-based routes (`index.astro` is the About page, `blog/`, `projects/`, `rss.xml.js`)
+- `src/content/blog/` — blog posts as `.md`/`.mdx`, frontmatter validated by `src/content.config.ts`
+- `src/layouts/`, `src/components/` — shared UI; site-wide constants in `src/consts.ts`
+- `public/` — static assets copied verbatim, including `CNAME` (the custom domain)
+- `mise.toml` — pinned Bun version, used both locally and in CI
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Dependency updates
 
-## 🧞 Commands
+- **Dependabot** (`.github/dependabot.yml`) opens weekly upgrade PRs against `bun.lock` and for the
+  GitHub Actions used in the workflows. Astro and its integrations are grouped into a single PR;
+  other minor/patch bumps are grouped; major bumps come as separate PRs.
+- Every PR is verified by `.github/workflows/ci.yml` (`bun install --frozen-lockfile && bun run check`).
+- `.github/workflows/dependency-report.yml` posts a weekly `mise outdated` / `bun outdated` /
+  `bun audit` summary to the workflow run (Actions → Dependency report → job summary). Run it any
+  time via **Run workflow**. `mise outdated` is what catches a new Bun release, since Dependabot
+  does not track `mise.toml`.
+- Locally: `bun run deps:check`, `bun run deps:audit`, and `bun update --interactive` to pick
+  upgrades interactively.
 
-All commands are run from the root of the project, from a terminal:
+## Deployment
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
+Every push to `main` triggers `.github/workflows/deploy.yml`, which installs the pinned Bun via
+`mise`, runs `bun run build`, and publishes `dist/` with `actions/deploy-pages`. No manual deploy
+step is needed.
 
-## 👀 Want to learn more?
+One-time setup on GitHub:
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions**
+2. **Settings → Pages → Custom domain: `lawlan.dev`**, then enable **Enforce HTTPS**
+   once the certificate has been issued.
+3. DNS for `lawlan.dev` (apex domain) — four `A` records and four `AAAA` records:
 
-## Credit
+   ```
+   A     185.199.108.153
+   A     185.199.109.153
+   A     185.199.110.153
+   A     185.199.111.153
+   AAAA  2606:50c0:8000::153
+   AAAA  2606:50c0:8001::153
+   AAAA  2606:50c0:8002::153
+   AAAA  2606:50c0:8003::153
+   ```
 
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+   Optionally add `CNAME www → lanyitin.github.io` so `www.lawlan.dev` redirects to the apex.
+
+`public/CNAME` keeps the custom domain from being reset on each deploy — do not delete it.
