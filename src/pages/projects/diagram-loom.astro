@@ -1,0 +1,339 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+const description =
+	'Diagram Loom — a Tauri desktop app that manages deployment and connectivity data for a system, lints it for gaps, and produces C4 Model diagrams.';
+
+const stack = [
+	'Rust',
+	'Tauri',
+	'Vue 3 + TypeScript',
+	'maxGraph',
+	'elkjs',
+	'tauri-specta',
+	'serde / YAML',
+	'calamine (xlsx)',
+	'MCP',
+	'Playwright / WebdriverIO',
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title="Diagram Loom" description={description} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="lang-switch" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="zh" class="active">中文</button>
+				<button type="button" data-lang-btn="en">EN</button>
+			</div>
+
+			<!-- 中文 -->
+			<section data-lang="zh" lang="zh-Hant">
+				<h1>Diagram Loom</h1>
+				<p class="tagline">
+					一套桌面應用程式，管理系統的部署與連線資訊，檢查有沒有漏掉的連線，並產出 C4 Model 圖。
+				</p>
+
+				<h2>專案簡介</h2>
+				<p>
+					畫架構圖的工具已經很多了，但真正的痛點不在畫圖：當一套系統有數百條連線時，怕的是<strong>漏掉其中一條</strong>。所以
+					Diagram Loom 的核心不是畫布，而是<strong>連線的完整性管理與 Linting</strong>——圖只是這份資料的其中一種呈現方式。
+				</p>
+				<p>
+					它刻意不做 code → diagram 的逆向工程，也不掃描真實環境做自動發現。資料由人維護，工具負責在存檔時告訴你「這個環境還缺什麼」。
+				</p>
+
+				<h2>核心概念：兩層模型</h2>
+				<p>
+					<strong>邏輯層是母版，環境層是分身。</strong>邏輯層定義「有哪些服務、誰要連誰」（<code>Container</code>、<code>Relationship</code>）；環境層填「實際跑在哪台機器、IP
+					是什麼、幾個節點」（<code>ContainerInstance</code>、<code>Connection</code>）。
+				</p>
+				<p>
+					通則只有一條：<strong>邏輯層有的東西，每個環境都必須實現，沒實現就 lint
+					報錯</strong>。命名全面對齊 C4——這裡的 <code>Container</code> 是服務（Redis、Consul），機器叫
+					<code>Deployment Node</code>，F5 這類 VIP 設備叫 <code>Infrastructure Node</code>。
+				</p>
+
+				<h2>架構亮點</h2>
+				<ul>
+					<li>
+						<strong>規則在 Rust，畫面與檔案格式在 JavaScript</strong> —— 領域模型、lint、Excel 匯入、三方對帳的判斷都在
+						Rust；Vue 負責畫面、畫布與 <code>.drawio</code> 讀寫。判斷標準是「這是<em>規則</em>還是<em>轉接</em>」。
+					</li>
+					<li>
+						<strong>Hexagonal，但只畫該畫的那條線</strong> —— <code>loom-core</code> 不相依
+						<code>tauri</code>，核心不知道自己被誰呼叫，因此大部分邏輯都能用 <code>cargo test</code>
+						驗證。這條紀律由一個 CI 檢查守著。
+					</li>
+					<li>
+						<strong>自己的 maxGraph 畫布</strong> —— 一開始是內嵌 draw.io 的
+						iframe，實測後換成自己跑 maxGraph：同一個文件、同一套事件，不再隔著
+						postMessage。<code>.drawio</code> 留下來當檔案格式，讀寫兩邊都自己寫。
+					</li>
+					<li>
+						<strong>自動排版</strong> —— elkjs，只用 <code>layered</code>；實測下來只有它處理得了巢狀容器加上跨容器的邊。2480
+						個節點排版約 6 秒，數百節點不到 1 秒。
+					</li>
+					<li>
+						<strong>三方對帳</strong> —— 圖是人手改過的，模型也會變。存檔時比對「圖／模型／上次的 base
+						快照」三方，逐項判斷哪邊動了。JS 說「圖上有什麼」，Rust 說「這代表什麼」。
+					</li>
+					<li>
+						<strong>給 AI Agent 的 MCP 端點</strong> —— 八支工具、三種形狀（讀 <code>{'{scope, select, detail}'}</code>、寫
+						<code>{'{scope, items, dry_run}'}</code>、刪 <code>{'{scope, targets, cascade, confirm}'}</code>），讓 Agent
+						不必把整份專案倒出來就能問「prod 的 redis 建好了沒」。
+					</li>
+				</ul>
+
+				<h2>Lint：這個專案的靈魂</h2>
+				<p>
+					目前 14 條規則（L001–L014），分 Error / Warning / Info 三級。幾條代表性的：
+				</p>
+				<ul>
+					<li><strong>L001</strong> —— 邏輯層元素在某環境沒有任何實現。</li>
+					<li><strong>L002</strong> —— 某條連線在某環境<strong>走不通</strong>（可達性斷裂，例如 F5 設了但後面沒接）。用 BFS 檢查。</li>
+					<li><strong>L004 / L005</strong> —— 萬用字元的實際數量與 <code>expect</code> 不符，或根本沒註明 <code>expect</code>。</li>
+					<li><strong>L006</strong> —— Endpoint 缺少實際位址（IP / port / URL / 路徑）。</li>
+					<li><strong>L013</strong> —— 契約的目標端是人。人只能當來源，他沒有接點也不會被部署。</li>
+				</ul>
+				<p>
+					每一條會叫的 lint，面板上都要有對應的操作能就地修好——這是刻意的要求，不是加分項。
+				</p>
+
+				<h2>資料怎麼存</h2>
+				<p>
+					一個 Project 就是<strong>一個資料夾</strong>，內含多個 YAML 檔：<code>logical/</code>
+					放邏輯層，<code>environments/</code> 一個環境一個檔，<code>diagrams/</code>
+					放圖。全部是純文字，可以進版控、可以 diff、可以 code review。元素用 UUID 當身分證、slug 當顯示名。
+				</p>
+
+				<h2>技術棧</h2>
+				<div class="tags">
+					{stack.map((item) => <span class="tag">{item}</span>)}
+				</div>
+
+				<h2>開發狀態</h2>
+				<p>
+					主動開發中。領域模型、lint、Excel 匯入、表格與 lint 面板、編輯與復原、資源
+					CRUD、MCP 端點、圖的節點／連線／篩選／標註／存檔都已完成。下一步是<strong>對帳面板的
+					UI</strong>——三方比對的判斷已經在 Rust 做完了，缺的是讓人逐項裁決差異的那個畫面，也是這個專案最難的一塊。
+				</p>
+
+				<h2>連結</h2>
+				<ul>
+					<li>
+						<a href="https://github.com/lanyitin/diagram-loom">github.com/lanyitin/diagram-loom</a>
+						—— 原始碼：Rust 的 <code>loom-core</code> 與 <code>loom-mcp</code>、Tauri 殼、Vue
+						前端。設計文件與決策紀錄目前還放在本機的 workspace 裡，尚未公開。
+					</li>
+				</ul>
+			</section>
+
+			<!-- English -->
+			<section data-lang="en" lang="en" hidden>
+				<h1>Diagram Loom</h1>
+				<p class="tagline">
+					A desktop app that manages a system's deployment and connectivity data, lints it for
+					missing links, and produces C4 Model diagrams.
+				</p>
+
+				<h2>Overview</h2>
+				<p>
+					There is no shortage of diagramming tools, but the real pain isn't drawing: when a system
+					has hundreds of connections, what you fear is <strong>missing one of them</strong>. So the
+					core of Diagram Loom isn't the canvas — it's <strong>completeness management and linting
+					over the connections</strong>. Diagrams are just one way to render that data.
+				</p>
+				<p>
+					It deliberately does not reverse-engineer code into diagrams, and it does not scan live
+					environments for discovery. People maintain the data; the tool's job is to tell you, on
+					save, what this environment is still missing.
+				</p>
+
+				<h2>The Core Idea: Two Layers</h2>
+				<p>
+					<strong>The logical layer is the master; each environment is a copy of it.</strong> The
+					logical layer declares what services exist and who must talk to whom
+					(<code>Container</code>, <code>Relationship</code>); the environment layer fills in which
+					machine it actually runs on, what the IP is, and how many nodes there are
+					(<code>ContainerInstance</code>, <code>Connection</code>).
+				</p>
+				<p>
+					There is exactly one rule: <strong>everything in the logical layer must be realized in
+					every environment, or lint reports it</strong>. Naming follows C4 throughout — a
+					<code>Container</code> here is a service (Redis, Consul), machines are
+					<code>Deployment Node</code>s, and VIP appliances like F5 are
+					<code>Infrastructure Node</code>s.
+				</p>
+
+				<h2>Architecture</h2>
+				<ul>
+					<li>
+						<strong>Rules in Rust, views and file formats in JavaScript</strong> — the domain model,
+						lint, Excel import, and the three-way reconciliation verdict all live in Rust; Vue owns
+						the UI, the canvas, and <code>.drawio</code> read/write. The test is whether something is
+						a <em>rule</em> or an <em>adapter</em>.
+					</li>
+					<li>
+						<strong>Hexagonal, but only where it earns its keep</strong> — <code>loom-core</code> does
+						not depend on <code>tauri</code>; the core doesn't know who calls it, so most of the
+						logic is verifiable with plain <code>cargo test</code>. A CI check guards that boundary.
+					</li>
+					<li>
+						<strong>Our own maxGraph canvas</strong> — it started as an embedded draw.io iframe, then
+						moved to running maxGraph directly: one document, one event system, no postMessage in
+						between. <code>.drawio</code> stays as the file format, with both sides hand-written.
+					</li>
+					<li>
+						<strong>Automatic layout</strong> — elkjs, <code>layered</code> only; in testing it was
+						the only algorithm that handled nested containers plus edges crossing them. 2,480 nodes
+						lay out in about 6 seconds; a few hundred take under a second.
+					</li>
+					<li>
+						<strong>Three-way reconciliation</strong> — diagrams get edited by hand and the model
+						moves too. On save, the diagram, the model, and the previous base snapshot are compared
+						so each difference can be adjudicated. JS says <em>what's on the diagram</em>; Rust says
+						<em>what that means</em>.
+					</li>
+					<li>
+						<strong>An MCP surface for AI agents</strong> — eight tools in three shapes (read
+						<code>{'{scope, select, detail}'}</code>, write <code>{'{scope, items, dry_run}'}</code>,
+						delete <code>{'{scope, targets, cascade, confirm}'}</code>), so an agent can ask "is redis
+						set up in prod yet?" without dumping the whole project first.
+					</li>
+				</ul>
+
+				<h2>Lint: The Heart of It</h2>
+				<p>
+					Fourteen rules today (L001–L014) across Error / Warning / Info. A representative few:
+				</p>
+				<ul>
+					<li><strong>L001</strong> — a logical element is not realized at all in some environment.</li>
+					<li>
+						<strong>L002</strong> — a relationship is <strong>unreachable</strong> in some environment
+						(e.g. the F5 is configured but nothing sits behind it). Checked with BFS.
+					</li>
+					<li>
+						<strong>L004 / L005</strong> — a wildcard's actual count doesn't match its
+						<code>expect</code>, or has no <code>expect</code> at all.
+					</li>
+					<li><strong>L006</strong> — an endpoint has no concrete address (IP / port / URL / path).</li>
+					<li>
+						<strong>L013</strong> — a contract targets a person. People can only be a source; they
+						have no endpoints and don't get deployed.
+					</li>
+				</ul>
+				<p>
+					Every lint that can fire must have a corresponding fix in the panel — that's a requirement,
+					not a nice-to-have.
+				</p>
+
+				<h2>Storage</h2>
+				<p>
+					A project is <strong>a folder</strong> of YAML files: <code>logical/</code> for the logical
+					layer, <code>environments/</code> with one file per environment, <code>diagrams/</code> for
+					the diagrams. All plain text — versionable, diffable, reviewable. Elements carry a UUID as
+					identity and a slug as display name.
+				</p>
+
+				<h2>Tech Stack</h2>
+				<div class="tags">
+					{stack.map((item) => <span class="tag">{item}</span>)}
+				</div>
+
+				<h2>Status</h2>
+				<p>
+					Under active development. The domain model, lint, Excel import, the table and lint panels,
+					editing and undo, resource CRUD, the MCP endpoints, and the diagram work (nodes, edges,
+					filtering, annotation, saving) are all done. Next up is <strong>the reconciliation panel
+					UI</strong> — the three-way comparison already works in Rust; what's missing is the screen
+					where a human adjudicates each difference, and it's the hardest part of the project.
+				</p>
+
+				<h2>Links</h2>
+				<ul>
+					<li>
+						<a href="https://github.com/lanyitin/diagram-loom">github.com/lanyitin/diagram-loom</a>
+						— the source: the <code>loom-core</code> and <code>loom-mcp</code> Rust crates, the
+						Tauri shell, and the Vue front end. The design docs and decision records still live in
+						a local workspace and aren't public yet.
+					</li>
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.lang-switch {
+		display: flex;
+		gap: 0.25rem;
+		justify-content: flex-end;
+		margin-bottom: 1rem;
+	}
+	.lang-switch button {
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.75rem;
+		border: 1px solid rgb(var(--gray-light));
+		background: white;
+		color: rgb(var(--gray));
+		border-radius: 999px;
+		cursor: pointer;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease,
+			border-color 0.2s ease;
+	}
+	.lang-switch button.active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
+	}
+	.tagline {
+		font-size: 1.15rem;
+		color: rgb(var(--gray-dark));
+		line-height: 1.6;
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin: 0.5rem 0 1rem;
+	}
+	.tag {
+		font-size: 0.8rem;
+		padding: 0.2rem 0.6rem;
+		border-radius: 999px;
+		background: rgb(var(--gray-light));
+		color: rgb(var(--gray-dark));
+	}
+</style>
+
+<script>
+	const buttons = document.querySelectorAll<HTMLButtonElement>('[data-lang-btn]');
+	const sections = document.querySelectorAll<HTMLElement>('[data-lang]');
+
+	function setLang(lang: string) {
+		sections.forEach((section) => {
+			section.hidden = section.dataset.lang !== lang;
+		});
+		buttons.forEach((button) => {
+			button.classList.toggle('active', button.dataset.langBtn === lang);
+		});
+	}
+
+	buttons.forEach((button) => {
+		button.addEventListener('click', () => setLang(button.dataset.langBtn!));
+	});
+
+	// Default to Chinese; English section starts hidden via markup.
+	setLang('zh');
+</script>
