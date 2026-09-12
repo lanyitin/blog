@@ -37,51 +37,51 @@ const stack = [
 			<section data-lang="zh" lang="zh-Hant">
 				<h1>Streamexa</h1>
 				<p class="tagline">
-					一套以 Go 打造的系統,能偵測、分析並下載網頁中的影音串流 (HLS / DASH)。
+					一套以 Go 打造的系統，能偵測、分析並下載網頁中的影音串流（HLS / DASH）。
 				</p>
 
 				<h2>專案簡介</h2>
 				<p>
-					許多網站以 JavaScript 動態載入、播放器混淆等方式遞送影音,使得串流不易被直接取得。Streamexa
-					透過自動化瀏覽器分析網頁,辨識其中的影音串流與中繼資料,並以分散式的方式管理下載工作。
+					許多網站以 JavaScript 動態載入、播放器混淆等方式遞送影音，使得串流不易被直接取得。Streamexa
+					透過自動化瀏覽器分析網頁，辨識其中的影音串流與中繼資料，並以分散式的方式管理下載工作。
 				</p>
 				<p>
-					這個專案我最感興趣的部分在於它的工程架構:如何用單一 binary 涵蓋伺服器、worker
-					與 CLI 三種角色,如何把瀏覽器分析做進 Go 程序內,以及如何設計一套安全、可隔離的外掛系統。
+					這個專案我最感興趣的部分在於它的工程架構：如何用單一 binary 涵蓋伺服器、worker
+					與 CLI 三種角色，如何把瀏覽器分析做進 Go 程序內，以及如何設計一套安全、可隔離的外掛系統。
 				</p>
 
 				<h2>架構亮點</h2>
 				<ul>
 					<li>
-						<strong>單一 binary,三種模式</strong> — 同一支 <code>streamexa</code> 可切換為
-						<code>server</code>(Web UI + REST API + gRPC 派工)、<code>worker</code>(連線伺服器執行分析與下載)、<code>cli</code>(終端機一次性下載器)。
+						<strong>單一 binary，三種模式</strong> — 同一支 <code>streamexa</code> 可切換為
+						<code>server</code>（Web UI + REST API + gRPC 派工）、<code>worker</code>（連線伺服器執行分析與下載）、<code>cli</code>（終端機一次性下載器）。
 					</li>
 					<li>
 						<strong>In-process CDP 分析器</strong> — 以 go-rod 透過 Chrome DevTools Protocol
-						驅動 Chromium,分析與分類邏輯(廣告偵測、m3u8 解析、直播判定)以原生 Go 編譯進 binary,不需另外的子程序或 JavaScript 分析器。
+						驅動 Chromium，分析與分類邏輯（廣告偵測、m3u8 解析、直播判定）以原生 Go 編譯進 binary，不需另外的子程序或 JavaScript 分析器。
 					</li>
 					<li>
-						<strong>分散式下載 worker</strong> — 多個 worker 可透過 gRPC 連上伺服器並行處理任務,搭配 per-domain 節流與斷路器。
+						<strong>分散式下載 worker</strong> — 多個 worker 可透過 gRPC 連上伺服器並行處理任務，搭配 per-domain 節流與斷路器。
 					</li>
 					<li>
-						<strong>Vue 3 Web UI</strong> — 以 WebSocket 即時更新任務進度、ETA 與狀態,支援亮/暗主題。
+						<strong>Vue 3 Web UI</strong> — 以 WebSocket 即時更新任務進度、ETA 與狀態，支援亮/暗主題。
 					</li>
 					<li>
-						<strong>瀏覽器擴充套件</strong> — 一鍵把目前頁面加入下載佇列 (Chrome / Firefox, Manifest V3)。
+						<strong>瀏覽器擴充套件</strong> — 一鍵把目前頁面加入下載佇列（Chrome / Firefox, Manifest V3）。
 					</li>
 				</ul>
 
 				<h2>外掛系統</h2>
 				<p>
 					第三方可以撰寫 Go 外掛來處理特定網站的擷取流程。外掛系統以 HashiCorp 的
-					<code>go-plugin</code>(gRPC)為基礎,並提供對外的 plugin SDK:
+					<code>go-plugin</code>（gRPC）為基礎，並提供對外的 plugin SDK：
 				</p>
 				<ul>
 					<li>依外掛目錄中的 <code>streamexa-plugin.json</code> 自動探索與 URL 比對。</li>
 					<li>
-						白名單式的 action API(<code>Click</code>、<code>WaitForSelector</code>、<code>PlayVideos</code>、<code>Snapshot</code>、<code>GetResponseBody</code>、<code>Fetch</code>…),外掛無法取得原生 CDP,快照中的認證資訊也會被遮蔽。
+						白名單式的 action API（<code>Click</code>、<code>WaitForSelector</code>、<code>PlayVideos</code>、<code>Snapshot</code>、<code>GetResponseBody</code>、<code>Fetch</code>…），外掛無法取得原生 CDP，快照中的認證資訊也會被遮蔽。
 					</li>
-					<li>每個外掛在獨立的程序與瀏覽器工作階段中執行,單一外掛崩潰或逾時不影響其他外掛。</li>
+					<li>每個外掛在獨立的程序與瀏覽器工作階段中執行，單一外掛崩潰或逾時不影響其他外掛。</li>
 				</ul>
 
 				<h2>技術棧</h2>
@@ -90,7 +90,7 @@ const stack = [
 				</div>
 
 				<h2>開發狀態</h2>
-				<p>主動開發中(v0.1.x 系列),核心分析、外掛系統與分散式下載皆已可運作。</p>
+				<p>主動開發中（v0.1.x 系列），核心分析、外掛系統與分散式下載皆已可運作。</p>
 
 				<h2>連結</h2>
 				<p class="placeholder">（原始碼 / Demo 連結待補）</p>
