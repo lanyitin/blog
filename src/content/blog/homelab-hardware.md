@@ -2,6 +2,7 @@
 title: "一台塞得進行李的 Homelab"
 description: "整座 Homelab 跑在一台迷你電腦上。這篇寫它的完整規格，以及兩個真正決定選型的條件：要帶得走，還要過得了 IncusOS 的硬性門檻。"
 pubDate: "Sep 10 2026"
+heroImage: "/homelab-hardware.png"
 ---
 
 這是 Homelab 系列的第一篇，共三篇：

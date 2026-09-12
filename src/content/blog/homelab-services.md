@@ -2,6 +2,7 @@
 title: "Homelab 上的那些服務：從一張自簽憑證開始"
 description: "四段 OVN 網路、Incus 的 network forward、每段一台 Traefik、一個自己的憑證中心、一台權威 DNS、一套收攏所有登入的身分驗證——以及它們怎麼互相撐住彼此。"
 pubDate: "Sep 12 2026"
+heroImage: "/homelab-services.png"
 ---
 
 這是 Homelab 系列的第三篇，共三篇：

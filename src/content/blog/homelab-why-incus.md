@@ -2,6 +2,7 @@
 title: "從 k3s 到 Talos 到 Proxmox，最後停在 Incus"
 description: "三代 Homelab 的取捨：為什麼離開 Kubernetes，為什麼離開 Proxmox，以及為什麼是 IncusOS 而不是「隨便一個 Linux 發行版再裝 Incus」。"
 pubDate: "Sep 11 2026"
+heroImage: "/homelab-why-incus.png"
 ---
 
 這是 Homelab 系列的第二篇，共三篇：
