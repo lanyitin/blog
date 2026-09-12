@@ -31,19 +31,19 @@ const description =
 
 			<!-- 中文 -->
 			<section data-lang="zh" lang="zh-Hant">
-				<h1>嗨,我是 Lawrence 👋</h1>
+				<h1>嗨，我是 Lawrence 👋</h1>
 				<p class="lede">
 					一個喜歡打造系統、鑽研架構的軟體工程師。
 				</p>
 				<p>
-					我平常在 Go、分散式系統、瀏覽器自動化與全端開發之間打轉,最享受的事情是把一個複雜、模糊的問題,拆解成乾淨、能長久維護的架構。比起把功能做出來,我更在意「為什麼這樣設計」以及它在真實環境中會如何運作。
+					我平常在 Go、分散式系統、瀏覽器自動化與全端開發之間打轉，最享受的事情是把一個複雜、模糊的問題，拆解成乾淨、能長久維護的架構。比起把功能做出來，我更在意「為什麼這樣設計」以及它在真實環境中會如何運作。
 				</p>
 				<p>
 					目前我主要在開發 <a href="/projects/streamexa">Streamexa</a> —
-					一套以 Go 打造、能偵測與下載網頁影音串流的系統,核心是單一 binary 三種模式與 gRPC 外掛架構。你可以在 <a href="/projects">Projects</a> 看到我做過的東西,在 <a href="/blog">Blog</a> 讀到我的一些筆記與想法。
+					一套以 Go 打造、能偵測與下載網頁影音串流的系統，核心是單一 binary 三種模式與 gRPC 外掛架構。你可以在 <a href="/projects">Projects</a> 看到我做過的東西，在 <a href="/blog">Blog</a> 讀到我的一些筆記與想法。
 				</p>
 				<p>
-					想聊聊的話,歡迎寄信到
+					想聊聊的話，歡迎寄信到
 					<a href="mailto:lanyitin@gmail.com">lanyitin@gmail.com</a>。
 				</p>
 			</section>
@@ -90,7 +90,7 @@ const description =
 		border-radius: 50%;
 		object-fit: cover;
 		display: block;
-		box-shadow: 0 2px 8px rgba(var(--gray), 25%);
+		border: var(--rule-width) solid var(--color-rule);
 	}
 	.lang-switch {
 		display: flex;
@@ -98,28 +98,34 @@ const description =
 		justify-content: flex-end;
 	}
 	.lang-switch button {
-		font: inherit;
-		font-size: 0.85rem;
-		padding: 0.25rem 0.75rem;
-		border: 1px solid rgb(var(--gray-light));
-		background: white;
-		color: rgb(var(--gray));
-		border-radius: 999px;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+		padding: 0.3rem 0.8rem;
+		border: var(--rule-width) solid var(--color-rule);
+		background: transparent;
+		color: var(--color-fg-faint);
+		border-radius: var(--radius);
 		cursor: pointer;
 		transition:
-			background 0.2s ease,
-			color 0.2s ease,
-			border-color 0.2s ease;
+			background var(--duration-fast) var(--ease-out),
+			color var(--duration-fast) var(--ease-out),
+			border-color var(--duration-fast) var(--ease-out);
+	}
+	.lang-switch button:hover {
+		color: var(--color-fg);
+		border-color: var(--color-rule-strong);
 	}
 	.lang-switch button.active {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: white;
+		background: var(--color-accent);
+		border-color: var(--color-accent);
+		color: var(--color-accent-fg);
 	}
 	.lede {
-		font-size: 1.25rem;
-		color: rgb(var(--gray-dark));
-		line-height: 1.6;
+		font-size: 1.15rem;
+		color: var(--color-fg-muted);
+		line-height: 1.7;
 	}
 </style>
 

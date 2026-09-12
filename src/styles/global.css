@@ -1,47 +1,92 @@
 /*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
+  Dark palette and typography adapted from the Sumi Astro theme (MIT)
+  https://github.com/kpab/astro-sumi — ink on paper, generous negative space,
+  one vermilion accent used sparingly. Sumi ships both schemes off one token
+  set; this site commits to the dark one.
+
+  Layout rules below still descend from Bear Blog's default CSS (MIT), which
+  the Astro blog starter was built on.
  */
 
+@import "./fonts.css";
+
 :root {
-	--accent: #2337ff;
-	--accent-dark: #000d8a;
-	--black: 15, 18, 25;
-	--gray: 96, 115, 159;
-	--gray-light: 229, 233, 240;
-	--gray-dark: 34, 41, 57;
-	--gray-gradient: rgba(var(--gray-light), 50%), #fff;
+	color-scheme: dark;
+
+	/* ---- palette ------------------------------------------------------- */
+	/* sumi (ink) */
+	--sumi-100: #e9e7e1;
+	--sumi-900: #101114;
+	--sumi-950: #0b0c0e;
+	/* shu (vermilion) */
+	--shu-400: #c85a52;
+
+	/* ---- semantic colours ---------------------------------------------- */
+	--color-bg: var(--sumi-950);
+	--color-bg-subtle: var(--sumi-900);
+	--color-bg-raised: #14161a;
+
+	--color-fg: var(--sumi-100);
+	--color-fg-muted: rgba(233, 231, 225, 0.62);
+	--color-fg-faint: rgba(233, 231, 225, 0.55);
+
+	--color-rule: rgba(233, 231, 225, 0.14);
+	--color-rule-strong: rgba(233, 231, 225, 0.28);
+
+	--color-accent: var(--shu-400);
+	--color-accent-fg: var(--sumi-950);
+
+	/* ---- typography ---------------------------------------------------- */
+	--font-serif: "Source Serif 4", "Songti TC", "Songti SC", "Noto Serif TC",
+		"Noto Serif CJK TC", "Hiragino Mincho ProN", serif;
+	--font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+		Consolas, monospace;
+
+	--tracking-label: 0.14em;
+	--tracking-tight: -0.01em;
+
+	--radius: 2px;
+	--rule-width: 1px;
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--duration-fast: 140ms;
+
+	/* ---- compatibility aliases ----------------------------------------- */
+	/* The starter's components address colours as `rgb(var(--gray))` triplets.
+	   Remapped onto the dark palette so those call sites stay meaningful:
+	   `--gray-dark` is now the *brightest* text, `--gray-light` the darkest
+	   surface. New code should use the semantic tokens above. */
+	--accent: var(--color-accent);
+	--accent-dark: #a8443d;
+	--black: 233, 231, 225;
+	--gray: 149, 148, 145;
+	--gray-light: 42, 43, 44;
+	--gray-dark: 233, 231, 225;
+	--gray-gradient: var(--color-bg-subtle), var(--color-bg);
 	--box-shadow:
-		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-		0 16px 32px rgba(var(--gray), 33%);
+		0 2px 6px rgba(0, 0, 0, 55%), 0 8px 24px rgba(0, 0, 0, 45%),
+		0 16px 32px rgba(0, 0, 0, 40%);
 }
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-regular.woff") format("woff");
-	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-fast: 0ms;
+	}
 }
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-bold.woff") format("woff");
-	font-weight: 700;
-	font-style: normal;
-	font-display: swap;
-}
+
 body {
-	font-family: "Atkinson", sans-serif;
+	font-family: var(--font-serif);
 	margin: 0;
 	padding: 0;
 	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
-	background-size: 100% 600px;
+	background: var(--color-bg);
 	word-wrap: break-word;
 	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
+	color: var(--color-fg);
 	font-size: 20px;
-	line-height: 1.7;
+	line-height: 1.75;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 main {
 	width: 720px;
@@ -56,39 +101,55 @@ h4,
 h5,
 h6 {
 	margin: 0 0 0.5rem 0;
-	color: rgb(var(--black));
-	line-height: 1.2;
+	color: var(--color-fg);
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
 }
+/* Restrained scale — Sumi's headings sit close to the body, so a long article
+   reads as one column of text rather than a stack of billboards. */
 h1 {
-	font-size: 3.052em;
+	font-size: clamp(2rem, 5vw, 2.6em);
 }
 h2 {
-	font-size: 2.441em;
+	font-size: 1.5em;
+	margin-top: 2.2rem;
 }
 h3 {
-	font-size: 1.953em;
+	font-size: 1.25em;
+	margin-top: 1.8rem;
 }
 h4 {
-	font-size: 1.563em;
+	font-size: 1.1em;
+	margin-top: 1.4rem;
 }
 h5 {
-	font-size: 1.25em;
+	font-size: 1em;
 }
 strong,
 b {
-	font-weight: 700;
+	font-weight: 600;
+	color: var(--color-fg);
 }
 a {
-	color: var(--accent);
+	color: inherit;
+	text-decoration-color: var(--color-rule-strong);
+	text-underline-offset: 0.22em;
+	text-decoration-thickness: 1px;
+	transition:
+		color var(--duration-fast) var(--ease-out),
+		text-decoration-color var(--duration-fast) var(--ease-out);
 }
 a:hover {
-	color: var(--accent);
+	color: var(--color-accent);
+	text-decoration-color: currentColor;
 }
 p {
 	margin-bottom: 1em;
 }
 .prose p {
-	margin-bottom: 2em;
+	margin-bottom: 1.5em;
 }
 textarea {
 	width: 100%;
@@ -97,35 +158,95 @@ textarea {
 input {
 	font-size: 16px;
 }
+button {
+	font: inherit;
+	color: inherit;
+}
 table {
 	width: 100%;
+	margin: 1.75em 0;
+	border-collapse: collapse;
+	font-size: 0.82em;
+	line-height: 1.6;
+}
+th,
+td {
+	padding: 0.5em 0.9em 0.5em 0;
+	text-align: left;
+	vertical-align: top;
+	border-bottom: var(--rule-width) solid var(--color-rule);
+}
+th {
+	font-family: var(--font-mono);
+	font-size: 0.85em;
+	font-weight: 500;
+	/* No uppercase / wide tracking here: these headers are usually Chinese, and
+	   letter-spacing pushes CJK glyphs apart instead of spacing a Latin label. */
+	letter-spacing: 0.03em;
+	color: var(--color-fg-faint);
+	border-bottom-color: var(--color-rule-strong);
+	white-space: nowrap;
+}
+/* Wide tables scroll inside themselves instead of pushing the page sideways. */
+.prose table {
+	display: block;
+	overflow-x: auto;
 }
 img {
 	max-width: 100%;
 	height: auto;
-	border-radius: 8px;
+	border-radius: var(--radius);
 }
 code {
-	padding: 2px 5px;
-	background-color: rgb(var(--gray-light));
-	border-radius: 2px;
+	font-family: var(--font-mono);
+	font-size: 0.85em;
+	padding: 0.1em 0.35em;
+	background-color: var(--color-bg-raised);
+	border: var(--rule-width) solid var(--color-rule);
+	border-radius: var(--radius);
 }
 pre {
-	padding: 1.5em;
-	border-radius: 8px;
+	padding: 1.25em 1.5em;
+	border: var(--rule-width) solid var(--color-rule);
+	border-radius: var(--radius);
+	font-size: 0.8em;
+	line-height: 1.65;
+	overflow-x: auto;
 }
 pre > code {
 	all: unset;
+	font-family: var(--font-mono);
 }
 blockquote {
-	border-left: 4px solid var(--accent);
-	padding: 0 0 0 20px;
-	margin: 0px;
-	font-size: 1.333em;
+	border-left: 2px solid var(--color-accent);
+	padding: 0 0 0 1.2em;
+	margin: 1.75em 0;
+	font-size: 1em;
+	color: var(--color-fg-muted);
+}
+blockquote p:last-child {
+	margin-bottom: 0;
 }
 hr {
+	height: var(--rule-width);
 	border: none;
-	border-top: 1px solid rgb(var(--gray-light));
+	background: var(--color-rule);
+	margin: 2.5em 0;
+}
+ul,
+ol {
+	padding-left: 1.3em;
+}
+li {
+	margin-bottom: 0.4em;
+}
+::selection {
+	background: var(--color-accent);
+	color: var(--color-accent-fg);
+}
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 3px;
 }
 @media (max-width: 720px) {
 	body {
