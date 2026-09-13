@@ -17,27 +17,30 @@ const posts = (await getCollection('blog')).sort(
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
 			main {
-				width: 960px;
+				width: var(--width-page);
 			}
+			/* Cards flow into as many columns as the shell can fit at a legible card
+			   width, so a 1440px screen gets three across and a laptop gets two. */
 			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+				gap: 2.5rem 2rem;
 				list-style-type: none;
 				margin: 0;
 				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
 			}
 			ul li * {
 				text-decoration: none;
 				transition: 0.2s ease;
 			}
 			ul li:first-child {
-				width: 100%;
+				grid-column: 1 / -1;
 				margin-bottom: 1rem;
 				text-align: center;
+			}
+			ul li:first-child img {
+				max-height: 60vh;
+				object-fit: cover;
 			}
 			ul li:first-child img {
 				width: 100%;
@@ -45,7 +48,12 @@ const posts = (await getCollection('blog')).sort(
 			ul li:first-child .title {
 				font-size: 2.369rem;
 			}
+			/* One ratio for every card image, so titles line up across a row
+			   regardless of what shape the source file happens to be. */
 			ul li img {
+				width: 100%;
+				aspect-ratio: 2 / 1;
+				object-fit: cover;
 				margin-bottom: 0.5rem;
 				border-radius: var(--radius);
 			}
@@ -74,10 +82,10 @@ const posts = (await getCollection('blog')).sort(
 			}
 			@media (max-width: 720px) {
 				ul {
-					gap: 0.5em;
+					grid-template-columns: 1fr;
+					gap: 2rem;
 				}
 				ul li {
-					width: 100%;
 					text-align: center;
 				}
 				ul li:first-child {

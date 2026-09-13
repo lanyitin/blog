@@ -45,6 +45,16 @@
 	--tracking-label: 0.14em;
 	--tracking-tight: -0.01em;
 
+	/* ---- layout --------------------------------------------------------- */
+	/* The shell is wide; the reading column inside it is not the shell. On a
+	   wide screen a post is `--width-prose` of text plus a `--width-toc` rail,
+	   and those three numbers are meant to add up to `--width-page`. */
+	--width-page: 1440px;
+	--width-prose: 1080px;
+	--width-toc: 280px;
+	--gap-rail: 5rem;
+	--gutter: 1em;
+
 	--radius: 2px;
 	--rule-width: 1px;
 	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -89,10 +99,10 @@ body {
 	text-rendering: optimizeLegibility;
 }
 main {
-	width: 720px;
-	max-width: calc(100% - 2em);
+	width: var(--width-prose);
+	max-width: calc(100% - 2 * var(--gutter));
 	margin: auto;
-	padding: 3em 1em;
+	padding: 3em var(--gutter);
 }
 h1,
 h2,
@@ -239,6 +249,15 @@ ol {
 }
 li {
 	margin-bottom: 0.4em;
+}
+/* Anchor targets (TOC jumps, deep links) stop clear of the top edge. */
+:is(h1, h2, h3, h4, h5, h6)[id] {
+	scroll-margin-top: 2rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
 }
 ::selection {
 	background: var(--color-accent);

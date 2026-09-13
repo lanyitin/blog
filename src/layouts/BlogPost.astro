@@ -1,37 +1,195 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<'blog'>['data'] & {
+	headings?: MarkdownHeading[];
+};
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, headings = [] } =
+	Astro.props;
+
+// h1 is the post title (rendered by this layout), and h4+ is too fine-grained
+// to be worth a rail entry — the TOC is h2/h3 only.
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 
 <html lang="en">
 	<head>
 		<BaseHead title={title} description={description} />
+	</head>
+
+	<body>
+		<Header />
+		<main>
+			<article>
+				{
+					heroImage && (
+						<div class="hero-image">
+							<img width={1020} height={510} src={heroImage} alt="" />
+						</div>
+					)
+				}
+				<div class="post-shell" data-has-toc={toc.length > 0 ? 'true' : 'false'}>
+					<div class="prose">
+						<div class="title">
+							<div class="date">
+								<FormattedDate date={pubDate} />
+								{
+									updatedDate && (
+										<div class="last-updated-on">
+											Last updated on <FormattedDate date={updatedDate} />
+										</div>
+									)
+								}
+							</div>
+							<h1>{title}</h1>
+							<hr />
+						</div>
+						<slot />
+					</div>
+
+					{
+						toc.length > 0 && (
+							<aside class="toc">
+								<details class="toc-box" open>
+									<summary>Contents</summary>
+									<nav aria-label="Table of contents">
+										<ul>
+											{toc.map((h) => (
+												<li class={`depth-${h.depth}`}>
+													<a href={`#${h.slug}`}>{h.text}</a>
+												</li>
+											))}
+										</ul>
+									</nav>
+								</details>
+							</aside>
+						)
+					}
+				</div>
+			</article>
+		</main>
+		<Footer />
+
+		<script>
+			const rail = document.querySelector<HTMLElement>('.toc');
+			if (rail) {
+				const box = rail.querySelector<HTMLDetailsElement>('.toc-box')!;
+				const narrow = window.matchMedia('(max-width: 1180px)');
+
+				// Stacked above the article, an expanded TOC would push the post off
+				// the first screen — so it starts collapsed there and open on the rail.
+				const syncOpen = () => {
+					box.open = !narrow.matches;
+				};
+				syncOpen();
+				narrow.addEventListener('change', syncOpen);
+
+				const links = Array.from(
+					rail.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'),
+				);
+				const targets = links
+					.map((link) => {
+						const id = decodeURIComponent(link.hash.slice(1));
+						const heading = document.getElementById(id);
+						return heading ? { link, heading } : null;
+					})
+					.filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => entry !== null);
+
+				if (targets.length > 0) {
+					let queued = false;
+					let lastActive: HTMLAnchorElement | null = null;
+
+					// A TOC taller than the rail scrolls inside itself, so the active
+					// entry can end up out of sight. Nudge it back into the rail's own
+					// viewport — but only when it changes, so a reader who scrolled the
+					// rail by hand isn't fought on every frame.
+					const revealInRail = (link: HTMLAnchorElement) => {
+						if (rail.scrollHeight <= rail.clientHeight) return;
+						const item = link.getBoundingClientRect();
+						const box = rail.getBoundingClientRect();
+						const margin = 12;
+						if (item.top < box.top + margin) {
+							rail.scrollTop -= box.top + margin - item.top;
+						} else if (item.bottom > box.bottom - margin) {
+							rail.scrollTop += item.bottom - box.bottom + margin;
+						}
+					};
+
+					const highlight = () => {
+						queued = false;
+						// The active entry is the last heading whose top has passed the
+						// reading line; scanning backwards finds it in one pass.
+						let active = targets[0];
+						for (const entry of targets) {
+							if (entry.heading.getBoundingClientRect().top > 140) break;
+							active = entry;
+						}
+						// Bottom of the page: nothing below can ever become active, so
+						// pin the last entry rather than leaving it unreachable.
+						if (
+							window.scrollY + window.innerHeight >=
+							document.documentElement.scrollHeight - 2
+						) {
+							active = targets[targets.length - 1];
+						}
+						if (active.link !== lastActive) {
+							for (const { link } of targets) {
+								link.classList.toggle('active', link === active.link);
+							}
+							revealInRail(active.link);
+							lastActive = active.link;
+						}
+					};
+					const onScroll = () => {
+						if (queued) return;
+						queued = true;
+						requestAnimationFrame(highlight);
+					};
+					highlight();
+					window.addEventListener('scroll', onScroll, { passive: true });
+					window.addEventListener('resize', onScroll, { passive: true });
+				}
+			}
+		</script>
+
 		<style>
 			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
+				width: var(--width-page);
 			}
+			/* The hero sits above the grid, so left-align it to the reading column
+			   rather than letting a 2:1 image stretch the full 1440px shell and
+			   push the title off the first screen. */
 			.hero-image {
-				width: 100%;
+				max-width: var(--width-prose);
+				margin-bottom: 2.5em;
 			}
 			.hero-image img {
 				display: block;
-				margin: 0 auto;
+				width: 100%;
 				border-radius: var(--radius);
 			}
+
+			/* Reading column plus a rail. The two columns and the gap are sized to
+			   add up to --width-page, so the rail is what the extra width buys —
+			   the measure itself stays capped at --width-prose. */
+			.post-shell {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) var(--width-toc);
+				gap: var(--gap-rail);
+				align-items: start;
+			}
+			.post-shell[data-has-toc="false"] {
+				grid-template-columns: minmax(0, 1fr);
+			}
 			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
+				min-width: 0;
+				max-width: var(--width-prose);
 				color: var(--color-fg);
 			}
 			.title {
@@ -54,35 +212,102 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 			.last-updated-on {
 				font-style: italic;
 			}
-		</style>
-	</head>
 
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <img width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
+			/* ---- table of contents ------------------------------------------ */
+			.toc {
+				position: sticky;
+				top: 2rem;
+				max-height: calc(100vh - 4rem);
+				overflow-y: auto;
+				overscroll-behavior: contain;
+				scrollbar-width: thin;
+				scrollbar-color: var(--color-rule-strong) transparent;
+				font-size: 0.8rem;
+				line-height: 1.5;
+			}
+			.toc summary {
+				font-family: var(--font-mono);
+				font-size: 0.7rem;
+				font-weight: 500;
+				letter-spacing: var(--tracking-label);
+				text-transform: uppercase;
+				color: var(--color-fg-faint);
+				cursor: pointer;
+				list-style: none;
+				padding-bottom: 0.9em;
+			}
+			.toc summary::-webkit-details-marker {
+				display: none;
+			}
+			.toc summary:hover {
+				color: var(--color-fg);
+			}
+			.toc ul {
+				margin: 0;
+				padding: 0;
+				list-style: none;
+				border-left: var(--rule-width) solid var(--color-rule);
+			}
+			.toc li {
+				margin: 0;
+			}
+			.toc a {
+				display: block;
+				padding: 0.35em 0 0.35em 1em;
+				margin-left: calc(-1 * var(--rule-width));
+				border-left: var(--rule-width) solid transparent;
+				color: var(--color-fg-muted);
+				text-decoration: none;
+			}
+			.toc .depth-3 a {
+				padding-left: 2em;
+				font-size: 0.94em;
+			}
+			.toc a:hover {
+				color: var(--color-fg);
+				border-left-color: var(--color-rule-strong);
+			}
+			.toc a.active {
+				color: var(--color-accent);
+				border-left-color: var(--color-accent);
+			}
+
+			/* Below the rail's breakpoint the TOC folds up above the article. */
+			@media (max-width: 1180px) {
+				.post-shell {
+					grid-template-columns: minmax(0, 1fr);
+					gap: 0;
+				}
+				.prose {
+					max-width: none;
+				}
+				.toc {
+					position: static;
+					order: -1;
+					max-height: none;
+					overflow: visible;
+					padding-bottom: 1.5em;
+					border-bottom: var(--rule-width) solid var(--color-rule);
+				}
+				/* Collapsed, the summary is the only affordance — give it a marker. */
+				.toc summary {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					padding-bottom: 0;
+				}
+				.toc summary::after {
+					content: "\25be";
+					font-size: 1.1em;
+					transition: transform var(--duration-fast) var(--ease-out);
+				}
+				.toc details[open] summary {
+					padding-bottom: 0.9em;
+				}
+				.toc details[open] summary::after {
+					transform: rotate(180deg);
+				}
+			}
+		</style>
 	</body>
 </html>
